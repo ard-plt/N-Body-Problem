@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 
+
 const int G = 1;
 
 class vektor {
