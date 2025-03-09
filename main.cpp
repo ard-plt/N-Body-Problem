@@ -1,7 +1,6 @@
 #include "gravity.cpp"
 #include "canvas (2).cpp"
 
-
 int main()
 {
 canvas graphic("gravity");
