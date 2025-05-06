@@ -30,29 +30,29 @@ public:
     }
 };
 
-class object {
+class objects {
 public:
     double mass;
     vector2D position, velocity, acceleration;
 
-    object(double mass_, vector2D position_, vector2D velocity_) : mass(mass_), position(position_), velocity(velocity_) {}
+    objects(double mass_, vector2D position_, vector2D velocity_) : mass(mass_), position(position_), velocity(velocity_) {}
 
-    virtual ~object() {}
+    virtual ~objects() {}
 
-    virtual void update(vector2D force) {
-        acceleration = force / mass;
+    virtual void update(vector2D force_) {
+        acceleration = force_ / mass;
         velocity = velocity + acceleration * timestep;
         position = position + velocity * timestep;
     }
 };
 
-class rocket : public object {
+class rocket : public objects {
 public:
     double exhaustVelocity, exhaustRate, fuelAmount;
     double massChange;
 
     rocket(double rocketMass, double fuel, double exVelocity, double rate, vector2D pos, vector2D vel)
-        : object(rocketMass + fuel, pos, vel),
+        : objects(rocketMass + fuel, pos, vel),
           exhaustVelocity(exVelocity),
           exhaustRate(rate),
           fuelAmount(fuel) {}
@@ -68,78 +68,73 @@ public:
             vector2D thrust(0, exhaustVelocity * massChange / timestep);
             force = force + thrust;
         }
-        object::update(force);
+        objects::update(force);
     }
 };
 
 class node {
 public:
-    object* obj;
+    objects* object;
     node* next;
-    node(object* o) : obj(o), next(nullptr) {}
+    node(objects* c) : object(c), next(nullptr) {}
 };
 
-class objectList {
+class list {
 public:
     node* head;
-    objectList() : head(nullptr) {}
+    list() : head(nullptr) {}
 
-    void add(object* o) {
-        node* newNode = new node(o);
-        newNode->next = head;
-        head = newNode;
+    void add(objects* c) {
+        node* new_ = new node(c);
+        new_->next = head;
+        head = new_;
     }
-
-    ~objectList() {
+    ~list() {
         while (head) {
             node* temp = head;
-            head = head->next;
-            delete temp->obj;
+                head = head->next;
+            delete temp->object;
             delete temp;
         }
     }
 };
-
-class simulation {
+class compare {
 public:
-    objectList objects;
+    list objectList;
 
-    void addObject(object* o) {
-        objects.add(o);
-    }
+    void addObject(objects* c) { objectList.add(c); }
 
-    void update() {
-        node* i = objects.head;
+    void update(){
+        node* i = objectList.head;
         while (i) {
             vector2D netForce(0, 0);
-            node* j = objects.head;
+            node* j = objectList.head;
             while (j) {
                 if (i != j) {
-                    vector2D diff = j->obj->position - i->obj->position;
-                    double distance = sqrt(diff.x * diff.x + diff.y * diff.y);
+                    vector2D difference = j->object->position - i->object->position;
+                    double distance = sqrt(difference.x * difference.x + difference.y * difference.y);
                     if (distance > 0) {
-                        double forceMagnitude = G * i->obj->mass * j->obj->mass / (distance * distance);
-                        netForce = netForce + diff.normalize() * forceMagnitude;
+                        double forceMagnitude = G * i->object->mass * j->object->mass / (distance * distance);
+                        netForce = netForce + difference.normalize() * forceMagnitude;
                     }
                 }
                 j = j->next;
             }
-            i->obj->update(netForce);
+            i->object->update(netForce);
             i = i->next;
         }
     }
-
     double totalEnergy() {
         double energy = 0;
-        node* i = objects.head;
+        node* i = objectList.head;
         while (i) {
-            energy += 0.5 * i->obj->mass * (i->obj->velocity.x * i->obj->velocity.x + i->obj->velocity.y * i->obj->velocity.y);
+            energy += 0.5 * i->object->mass * (i->object->velocity.x * i->object->velocity.x + i->object->velocity.y * i->object->velocity.y);
             node* j = i->next;
             while (j) {
-                vector2D diff = j->obj->position - i->obj->position;
-                double distance = sqrt(diff.x * diff.x + diff.y * diff.y);
+                vector2D minus = j->object->position - i->object->position;
+                double distance = sqrt(minus.x * minus.x + minus.y * minus.y);
                 if (distance > 0) {
-                    energy -= (G * i->obj->mass * j->obj->mass) / distance;
+                    energy -= (G * i->object->mass * j->object->mass) / distance;
                 }
                 j = j->next;
             }
@@ -148,12 +143,12 @@ public:
         return energy;
     }
 
-    vector2D getPosition(int index) {
-        node* temp = objects.head;
-        int count = 1;
+    vector2D getPosition(int begin) {
+        node* temp = objectList.head;
+        int count=1;
         while (temp) {
-            if (count == index) {
-                return temp->obj->position;
+            if (count==begin) {
+                return temp->object->position;
             }
             temp = temp->next;
             count++;
